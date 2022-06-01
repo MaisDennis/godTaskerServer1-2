@@ -40,7 +40,7 @@ const profileImgUpload = multer({
       );
     },
   }),
-  limits: { fileSize: 2000000 }, // In bytes: 2000000 bytes = 2 MB
+  limits: { fileSize: 5000000 }, // In bytes: 2000000 bytes = 2 MB
   fileFilter(req, file, cb) {
     checkFileType(file, cb);
   },

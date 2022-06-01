@@ -3,8 +3,12 @@ import User from '../../models/User';
 // -----------------------------------------------------------------------------
 class UserFollowingCountController {
   async index(req, res) {
-    const { id } = req.params;
-    const user = await User.findByPk(id);
+    const { contactName } = req.query;
+    const user = await User.findOne({
+      where: {
+        user_name: contactName,
+      },
+    });
     const workers = await user.getWorker();
     const countFollowing = workers.length;
 

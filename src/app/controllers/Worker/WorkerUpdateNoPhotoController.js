@@ -3,46 +3,35 @@ import * as Yup from 'yup';
 import Worker from '../../models/Worker';
 // import File from '../../models/File';
 // -----------------------------------------------------------------------------
-class UserUpdateNoPhotoController {
-
+class WorkerUpdateNoPhotoController {
   async update(req, res) {
-    const {
-      first_name,
-      last_name,
-      worker_name,
-      phonenumber,
-      birth_date,
-      gender,
-      bio,
-      instagram,
-      linkedin,
+    const schema = Yup.object().shape({
+      first_name: Yup.string(),
+      last_name: Yup.string(),
+      email: Yup.string(),
+      instagram: Yup.string(),
+      linkedin: Yup.string(),
+      bio: Yup.string(),
+    });
 
-    } = req.body;
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'Erro nos dados' });
+    }
 
-    const worker = await Worker.findOne({
-      where: { phonenumber: phonenumber },
+    const { email } = req.body;
+
+    let worker = await Worker.findOne({
+      where: { email },
     });
     // console.log(worker);
 
-    await worker.update({
-      first_name,
-      last_name,
-      worker_name,
-      phonenumber,
-      birth_date,
-      gender,
-      bio,
-      instagram,
-      linkedin,
+    await worker.update(req.body);
+
+    worker = await Worker.findOne({
+      where: { email },
     });
 
-    return res.json({
-      first_name,
-      last_name,
-      worker_name,
-      birth_date,
-      gender,
-    });
+    return res.json(worker);
   }
 }
-export default new UserUpdateNoPhotoController();
+export default new WorkerUpdateNoPhotoController();

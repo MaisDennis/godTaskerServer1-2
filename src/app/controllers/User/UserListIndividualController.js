@@ -4,15 +4,6 @@ import File from '../../models/File';
 class UserListIndividualController {
   async index(req, res) {
     const { id } = req.params;
-    // const {
-    //   first_name,
-    //   last_name,
-    //   user_name,
-    //   avatar,
-    //   instagram,
-    //   linkedin,
-    //   bio,
-    // } = await User.findByPk(id);
 
     const user = await User.findByPk(id, {
       include: [
@@ -23,16 +14,6 @@ class UserListIndividualController {
         },
       ],
     });
-
-    // return res.json({
-    //   first_name,
-    //   last_name,
-    //   user_name,
-    //   avatar,
-    //   instagram,
-    //   linkedin,
-    //   bio,
-    // });
 
     return res.json(user);
   }

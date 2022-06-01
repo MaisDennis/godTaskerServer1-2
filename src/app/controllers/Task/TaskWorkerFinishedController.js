@@ -7,23 +7,20 @@ import Signature from '../../models/Signature';
 // -----------------------------------------------------------------------------
 class TaskWorkerFinishedController {
   async index(req, res) {
-    const { workerID } = req.query;
-    // const { test } = req.query;
+    const { workerID, nameFilter } = req.query;
     const tasks = await Task.findAll({
       order: ['end_date'],
       where: {
-        worker_id: workerID, canceled_at: null, end_date: { [Op.ne]: null },
+        worker_id: workerID,
+        canceled_at: null,
+        end_date: { [Op.ne]: null },
+        name: { [Op.iLike]: `%${nameFilter}%` },
       },
       include: [
         {
           model: Worker,
           as: 'worker',
-          attributes: ['id', 'worker_name'],
-          // where: {
-          //   name: {
-          //     [Op.like]: `%${test}%`,
-          //   },
-          // },
+          attributes: ['id', 'worker_name', 'email'],
           include: [
             {
               model: File,
@@ -35,7 +32,7 @@ class TaskWorkerFinishedController {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'user_name'],
+          attributes: ['id', 'user_name', 'email'],
           include: [
             {
               model: File,

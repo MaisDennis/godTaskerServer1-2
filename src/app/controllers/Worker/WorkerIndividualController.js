@@ -26,7 +26,7 @@ class WorkerIndividualController {
         'avatar_id',
       ],
       where: {
-        phonenumber: phonenumber
+        phonenumber,
       },
       include: [
         {

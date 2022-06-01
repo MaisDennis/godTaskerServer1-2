@@ -1,112 +1,137 @@
 import * as Yup from 'yup';
 // -----------------------------------------------------------------------------
+// import firebase from 'firebase';
 import User from '../../models/User';
+import Worker from '../../models/Worker';
 import File from '../../models/File';
 // -----------------------------------------------------------------------------
 class UserController {
   async store(req, res) {
     const schema = Yup.object().shape({
-      first_name: Yup.string().required(),
-      last_name: Yup.string().required(),
       user_name: Yup.string().required(),
+      worker_name: Yup.string().required(),
       password: Yup.string()
         .required()
         .min(6),
-      phonenumber: Yup.string()
-        .required()
-        .min(11),
-      email: Yup.string()
-        .email()
-        .required(),
-      birth_date: Yup.string(),
-      gender: Yup.string(),
-      bio: Yup.string(),
-      instagram: Yup.string(),
-      linkedin: Yup.string(),
+      email: Yup.string(),
     });
+
+    // console.log(req.body);
 
     if (!(await schema.isValid(req.body))) {
       return res.status(400).json({ error: 'Create User fail: Schema error' });
     }
 
-    let userExists = await User.findOne({
-      where: {
-        phonenumber: req.body.phonenumber,
-      },
-    });
-
-    if (userExists) {
-      return res
-        .status(400)
-        .json({ error: 'User Create fail: Phonenumber already exists.' });
-    }
-
-    userExists = await User.findOne({
-      where: {
-        email: req.body.email,
-      },
-    });
-
-    if (userExists) {
-      return res
-        .status(400)
-        .json({ error: 'User Create fail: e-mail already exists.' });
-    }
-
     const {
       id,
       subscriber,
-      first_name,
-      last_name,
       user_name,
-      phonenumber,
+      worker_name,
+      hint,
       email,
-      birth_date,
-      gender,
+      // password,
+      points,
       bio,
-      instagram,
-      linkedin,
-    } = await User.create(req.body);
+    } = req.body;
 
-    return res.json({
+    console.log(req.body);
+
+    const userExists = await User.findOne({
+      where: { email },
+    });
+    if (userExists) {
+      return res
+        .status(400)
+        .json({ error: 'Create User fail: Email already exists.' });
+    }
+
+    // const emailError = false;
+
+    // await firebase
+    //   .auth()
+    //   .createUserWithEmailAndPassword(email, password)
+    //   .then(response => {
+    //     response.user.sendEmailVerification();
+    //     console.log('User account created & signed in!');
+    //     emailError = false;
+    //   })
+    //   .catch(error => {
+    //     emailError = true;
+    //     if (error.code === 'auth/email-already-in-use') {
+    //       console.log('That email address is already in use!');
+    //     }
+
+    //     if (error.code === 'auth/invalid-email') {
+    //       console.log('That email address is invalid!');
+    //     }
+    //     console.error(error);
+    //     return res.json(error);
+    //   });
+
+    // if (emailError === false) {
+    const user = await User.create({
       id,
       subscriber,
-      first_name,
-      last_name,
       user_name,
-      phonenumber,
+      hint,
       email,
-      birth_date,
-      gender,
+      points,
       bio,
-      instagram,
-      linkedin,
     });
+
+    const worker = await Worker.create({
+      id,
+      subscriber,
+      worker_name,
+      email,
+      points,
+      bio,
+    });
+
+    return res.json({
+      user,
+      worker,
+    });
+    // }
   }
 
   // ---------------------------------------------------------------------------
   async update(req, res) {
-    const { phonenumber, oldPassword } = req.body;
+    const {
+      email,
+      // oldPassword,
+    } = req.body;
+
     const user = await User.findOne({
-      where: { phonenumber },
+      where: { email },
     });
-    if (oldPassword && !(await user.checkPassword(oldPassword))) {
-      return res.status(401).json({ error: 'Password does not match' });
-    }
+
+    // if (oldPassword && !(await user.checkPassword(oldPassword))) {
+    //   return res.status(401).json({ error: 'Password does not match' });
+    // }
 
     await user.update(req.body);
 
-    const { id, user_name, avatar } = await User.findOne({
-      where: { phonenumber },
-      include: [
-        {
-          model: File,
-          as: 'avatar',
-          attributes: ['id', 'path', 'url'],
-        },
-      ],
+    const { id, first_name, last_name, user_name, avatar } = await User.findOne(
+      {
+        where: { email },
+        include: [
+          {
+            model: File,
+            as: 'avatar',
+            attributes: ['id', 'path', 'url'],
+          },
+        ],
+      }
+    );
+    return res.json({
+      id,
+      first_name,
+      last_name,
+      user_name,
+      email,
+      avatar,
     });
-    return res.json({ id, user_name, phonenumber, avatar });
   }
 
   // ---------------------------------------------------------------------------
@@ -122,18 +147,10 @@ class UserController {
 
   // ---------------------------------------------------------------------------
   async delete(req, res) {
-    let user = await User.findByPk(req.userId);
+    const { id } = req.params;
+    let user = await User.findByPk(id);
 
-    const userCanceledPhonenumber = user.phonenumber;
-    const userCanceledEmail = user.email;
-
-    user = await user.update({
-      phonenumber: '',
-      email: '',
-      canceled_at: new Date(),
-      deleted_phonenumber: userCanceledPhonenumber,
-      deleted_email: userCanceledEmail,
-    });
+    user = await user.destroy();
 
     return res.json(user);
   }

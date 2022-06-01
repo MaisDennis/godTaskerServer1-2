@@ -4,21 +4,25 @@ import Worker from '../../models/Worker';
 class UserNotificationController {
   async update(req, res) {
     const { id } = req.params;
-    const { notification_token, worker_id } = req.body;
-    console.log(id, worker_id, notification_token)
+    const { notification_token } = req.body;
+    // console.log(id, notification_token);
 
-    let user = await User.findByPk(id);
-    let worker = await Worker.findByPk(worker_id);
+    try {
+      let user = await User.findByPk(id);
+      let worker = await Worker.findByPk(id);
 
-    user = await user.update({
-      notification_token,
-    });
+      user = await user.update({
+        notification_token,
+      });
 
-    worker = await worker.update({
-      notification_token,
-    });
+      worker = await worker.update({
+        notification_token,
+      });
 
-    return res.json({ user, worker });
+      return res.json({ user, worker });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
 

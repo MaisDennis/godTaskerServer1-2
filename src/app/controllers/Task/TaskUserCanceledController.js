@@ -6,15 +6,19 @@ import User from '../../models/User';
 // -----------------------------------------------------------------------------
 class TaskUserCanceledController {
   async index(req, res) {
-    const { workerNameFilter, userID } = req.query;
+    const { workerNameFilter, userID, nameFilter } = req.query;
     const tasks = await Task.findAll({
       order: ['due_date'],
-      where: { user_id: userID, canceled_at: { [Op.ne]: null } },
+      where: {
+        user_id: userID,
+        canceled_at: { [Op.ne]: null },
+        name: { [Op.iLike]: `%${nameFilter}%` },
+      },
       include: [
         {
           model: Worker,
           as: 'worker',
-          attributes: ['id', 'worker_name', 'phonenumber'],
+          attributes: ['id', 'worker_name', 'email'],
           where: {
             worker_name: {
               [Op.like]: `%${workerNameFilter}%`,
@@ -31,7 +35,7 @@ class TaskUserCanceledController {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'user_name'],
+          attributes: ['id', 'user_name', 'email'],
           include: [
             {
               model: File,

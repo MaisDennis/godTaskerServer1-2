@@ -1,51 +1,51 @@
 import { Op } from 'sequelize';
-// import 'firebase/auth'
-import { startOfHour, parseISO, isBefore, subDays } from 'date-fns';
-// import firebaseAdmin from 'firebase-admin';
-// import firebase from '../../../config/firebase';
+import { format, startOfHour, parseISO, isBefore, subDays } from 'date-fns';
+import {
+  enUS,
+  // pt
+} from 'date-fns/locale/pt';
+import firebaseAdmin from 'firebase-admin';
 import 'firebase/firestore';
 import User from '../../models/User';
 import Task from '../../models/Task';
 import Worker from '../../models/Worker';
 import File from '../../models/File';
-
+import { io } from '../../../http';
+// -----------------------------------------------------------------------------
 class Task_Controller {
   // create task----------------------------------------------------------------
   async store(req, res) {
-    // const firestore = firebase.firestore();
-
     const [
       {
-        workerphonenumber,
+        workeremail,
         name,
         description,
         sub_task_list,
         task_attributes,
-        // message_id,
         status,
+        points,
         confirm_photo,
         start_date,
         due_date,
-        // messaged_at,
+        created,
+        due,
       },
       user_id,
     ] = req.body;
 
-    // const message_id = 1;
-    // const messaged_at = new Date();
     const user = await User.findByPk(user_id);
 
-    if (!user.phonenumber) {
+    if (!user.email) {
       return res
         .status(400)
         .json({ error: 'Create failed: User does not exist.' });
     }
 
-    const userphonenumber = user.phonenumber;
+    const useremail = user.email;
 
     const worker = await Worker.findOne({
       where: {
-        phonenumber: workerphonenumber,
+        email: workeremail,
       },
     });
 
@@ -62,75 +62,66 @@ class Task_Controller {
       return res.status(400).json({ error: 'Past dates are not permitted' });
     }
 
-    // const message = await Message.create({
-    //   task_id: 1,
-    //   worker_id: worker_id,
-    //   worker_name: worker.worker_name,
-    //   user_id: user.id,
-    //   user_name: user.user_name,
-    //   messages: [],
-    // });
-
     const task = await Task.create({
       user_id,
-      userphonenumber,
+      useremail,
       worker_id,
-      workerphonenumber,
+      workeremail,
       name,
       description,
       sub_task_list,
       task_attributes,
       status,
+      points,
       confirm_photo,
-      // message_id,
-      // message_id: documentId,
-      // messages: [],
-      // messaged_at,
       start_date,
       due_date,
+    }).then(() => {
+      const parsedDueDate = format(parseISO(due_date), "MMM'/'dd'/'yyyy", {
+        locale: enUS,
+      });
+
+      const pushMessage = {
+        notification: {
+          title: `${user.user_name}`,
+          body: `${created}: ${name} | ${due} ${parsedDueDate}`,
+        },
+        data: {
+          channelId: 'godtaskerChannel01', // (required)
+          title: `${user.user_name}`,
+          message: `${created}: ${name} | ${due} ${parsedDueDate}`,
+        },
+        android: {
+          notification: {
+            sound: 'default',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+            },
+          },
+        },
+        token: worker.notification_token,
+        // token:
+        //   'coQWZ3C8QKKAx6MRufr0fO:APA91bHG9HRdmqHDTNo-0zexXb1_aDN_Us8RILBaQLa6nxbpmVVsl6TnNr5eYRCwA6YX6Dbu0Eh88mG5FYCrUWNmwjnltWpwGfecfDVvL79n8iASVgg516Ns9NWNpgJg6405AWqgd9Ze',
+      };
+
+      io.emit(`task_create_${workeremail}`, 'Task Created');
+
+      if (worker.notification_token) {
+        firebaseAdmin
+          .messaging()
+          .send(pushMessage)
+          .then(response => {
+            console.log('Successfully sent message: ', response);
+          })
+          .catch(error => {
+            console.log('Error sending message: ', error);
+          });
+      }
     });
-
-    // await Task.findByPk(req.taskId, {
-    //   include: [
-    //     {
-    //       model: Message,
-    //       as: 'message',
-    //       attributes: ['id'],
-    //     },
-    //   ],
-    // });
-
-    // Firebase Notification ***************************************************
-    // const pushMessage = {
-    //   notification: {
-    //     title: `New Task from ${user.user_name}`,
-    //     body: `${name}, Start: ${start_date}, Due: ${due_date}`
-    //   },
-    //   data: {
-
-    //   },
-    //   android: {
-    //     notification: {
-    //       sound: 'default'
-    //     }
-    //   },
-    //   apns: {
-    //     payload: {
-    //       aps: {
-    //         sound: 'default'
-    //       }
-    //     }
-    //   },
-    //   token: worker.notification_token
-    // };
-
-    // firebaseAdmin.messaging().send(pushMessage)
-    //   .then(response => {
-    //     console.log('Successfully sent message: ', response);
-    //   })
-    //   .catch(error => {
-    //     console.log('Error sending message: ', error);
-    //   })
 
     return res.json(task);
   }
@@ -138,6 +129,7 @@ class Task_Controller {
   // ---------------------------------------------------------------------------
   async index(req, res) {
     const { workerNameFilter, userID } = req.query;
+    // io.emit(`task_create_dennisdjlee@yahoo.com`, 'Task Created');
     const tasks = await Task.findAll({
       // order: ['due_date'],
       where: { user_id: userID },
@@ -145,7 +137,7 @@ class Task_Controller {
         {
           model: Worker,
           as: 'worker',
-          attributes: ['id', 'worker_name', 'phonenumber'],
+          attributes: ['id', 'worker_name', 'email'],
           where: {
             worker_name: {
               [Op.like]: `%${workerNameFilter}%`,
@@ -173,13 +165,11 @@ class Task_Controller {
       description,
       sub_task_list,
       task_attributes,
-      // messages,
       score,
       status,
       status_bar,
       start_date,
       initiated_at,
-      // messaged_at,
       canceled_at,
       due_date,
     } = req.body;
@@ -191,16 +181,60 @@ class Task_Controller {
       description,
       sub_task_list,
       task_attributes,
-      // messages,rs
       score,
       status,
       status_bar,
       start_date,
       initiated_at,
-      // messaged_at,
       canceled_at,
       due_date,
     });
+
+    // const updatedTask = await Task.findByPk(task.id);
+    // const worker = await User.findByPk(task.worker_id);
+    // const user = await User.findByPk(task.user_id);
+    // const parsedDueDate = format(parseISO(due_date), "MMM'/'dd'/'yyyy", {
+    //   locale: enUS,
+    // });
+
+    // const pushMessage = {
+    //   notification: {
+    //     title: `${worker.worker_name}`,
+    //     body: `Updated ${name}`,
+    //   },
+    //   data: {
+    //     channelId: 'godtaskerChannel01', // (required)
+    //     title: `${worker.worker_name}`,
+    //     message: `updated ${name}`,
+    //   },
+    //   android: {
+    //     notification: {
+    //       sound: 'default',
+    //     },
+    //   },
+    //   apns: {
+    //     payload: {
+    //       aps: {
+    //         sound: 'default',
+    //       },
+    //     },
+    //   },
+    //   token: user.notification_token,
+    //   // token:
+    //   //   'coQWZ3C8QKKAx6MRufr0fO:APA91bHG9HRdmqHDTNo-0zexXb1_aDN_Us8RILBaQLa6nxbpmVVsl6TnNr5eYRCwA6YX6Dbu0Eh88mG5FYCrUWNmwjnltWpwGfecfDVvL79n8iASVgg516Ns9NWNpgJg6405AWqgd9Ze',
+    // };
+
+    // if (worker.notification_token) {
+    //   firebaseAdmin
+    //     .messaging()
+    //     .send(pushMessage)
+    //     .then(response => {
+    //       console.log('Successfully sent message: ', response);
+    //     })
+    //     .catch(error => {
+    //       console.log('Error sending message: ', error);
+    //     });
+    // }
 
     return res.json(task);
   }

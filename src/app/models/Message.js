@@ -4,6 +4,8 @@ class Message extends Model {
   static init(sequelize) {
     super.init(
       {
+        user_email: Sequelize.STRING,
+        worker_email: Sequelize.STRING,
         messaged_at: Sequelize.STRING,
         chat_id: Sequelize.INTEGER,
         canceled_at: Sequelize.DATE,

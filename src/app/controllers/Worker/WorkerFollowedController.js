@@ -5,9 +5,12 @@ import Worker from '../../models/Worker';
 
 class WorkerFollowedCountController {
   async index(req, res) {
-    const { id } = req.params;
-    const { nameFilter } = req.query;
-    const worker = await Worker.findByPk(id);
+    const { worker_name, nameFilter } = req.query;
+    const worker = await Worker.findOne({
+      where: {
+        worker_name,
+      },
+    });
     const users = await worker.getUser({
       where: {
         user_name: {

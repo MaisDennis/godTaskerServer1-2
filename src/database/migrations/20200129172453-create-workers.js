@@ -14,11 +14,11 @@ module.exports = {
       },
       first_name: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       last_name: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       worker_name: {
         type: Sequelize.STRING,
@@ -30,8 +30,8 @@ module.exports = {
       },
       phonenumber: {
         type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
+        allowNull: true,
+        // unique: true,
       },
       email: {
         type: Sequelize.STRING,
@@ -40,11 +40,11 @@ module.exports = {
       },
       birth_date: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       gender: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       bio: {
         type: Sequelize.STRING(2200),
@@ -55,10 +55,6 @@ module.exports = {
         allowNull: true,
       },
       linkedin: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-      notification_token: {
         type: Sequelize.STRING,
         allowNull: true,
       },
@@ -74,11 +70,15 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: true,
       },
-      deleted_phonenumber: {
+      points: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
+      occupation: {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      deleted_email: {
+      notification_token: {
         type: Sequelize.STRING,
         allowNull: true,
       },

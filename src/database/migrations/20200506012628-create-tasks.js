@@ -14,7 +14,7 @@ module.exports = {
         onDelete: 'SET NULL',
         allowNull: false,
       },
-      userphonenumber: {
+      useremail: {
         type: Sequelize.STRING,
         allowNull: false,
       },
@@ -25,7 +25,7 @@ module.exports = {
         onDelete: 'SET NULL',
         allowNull: false,
       },
-      workerphonenumber: {
+      workeremail: {
         type: Sequelize.STRING,
         allowNull: false,
       },
@@ -49,15 +49,23 @@ module.exports = {
         type: Sequelize.JSON,
         allowNull: true,
       },
-      score: {
-        type: Sequelize.JSON,
-        allowNull: true,
-      },
       status: {
         type: Sequelize.JSON,
         allowNull: true,
       },
       status_bar: {
+        type: Sequelize.FLOAT,
+        allowNull: true,
+      },
+      points: {
+        type: Sequelize.JSON,
+        allowNull: true,
+      },
+      score: {
+        type: Sequelize.JSON,
+        allowNull: true,
+      },
+      price: {
         type: Sequelize.FLOAT,
         allowNull: true,
       },

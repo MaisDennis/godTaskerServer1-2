@@ -9,11 +9,12 @@ import Task from '../../models/Task';
 import User from '../../models/User';
 import Worker from '../../models/Worker';
 
-class TaskWorkerNotificationController {
+class TaskWorkerSubtaskNotificationController {
   // ---------------------------------------------------------------------------
   async update(req, res) {
     const { id } = req.params; // id: task_id
-    // console.log(id)
+    const { position, text } = req.body;
+    console.log(text);
     const {
       name,
       description,
@@ -31,6 +32,7 @@ class TaskWorkerNotificationController {
     } = req.body;
 
     let task = await Task.findByPk(id);
+    const worker = await Worker.findByPk(task.worker_id);
 
     task = await task.update({
       name,
@@ -50,25 +52,28 @@ class TaskWorkerNotificationController {
 
     // Firebase Notification ***************************************************
     const user = await User.findByPk(task.user_id);
-    const worker = await Worker.findByPk(task.worker_id);
 
     // const formattedDate = fdate =>
     // fdate == null
     //   ? ''
     //   : format(fdate, "dd'/'MMM'/'yyyy HH:mm", { locale: ptBR });
 
+    // console.log(task.sub_task_list);
     let pushMessage = {};
     try {
-      // When Worker Declines or Accepts the Task
       pushMessage = {
         notification: {
-          title: `${worker.worker_name}:`,
-          body: `${task.status.comment}`,
+          title: `${text[0]}: ${task.name}:`,
+          body: `${worker.worker_name} ${
+            task.sub_task_list[position].complete ? `${text[1]}` : `${text[3]}`
+          } ${text[2]}: ${task.sub_task_list[position].description}`,
         },
         data: {
           channelId: 'godtaskerChannel01', // (required)
-          title: `${worker.worker_name}:`,
-          message: `${task.status.comment}`,
+          title: `${text[0]}: ${task.name}:`,
+          message: `${worker.worker_name} ${
+            task.sub_task_list[position].complete ? `${text[1]}` : `${text[3]}`
+          } ${text[2]}: ${task.sub_task_list[position].description}`,
         },
         android: {
           notification: {
@@ -102,4 +107,4 @@ class TaskWorkerNotificationController {
     return res.json(task);
   }
 }
-export default new TaskWorkerNotificationController();
+export default new TaskWorkerSubtaskNotificationController();

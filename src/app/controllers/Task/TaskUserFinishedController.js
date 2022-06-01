@@ -5,17 +5,22 @@ import File from '../../models/File';
 import User from '../../models/User';
 import Signature from '../../models/Signature';
 // -----------------------------------------------------------------------------
-class TaskUserUnfinishedController {
+class TaskUserFinishedController {
   async index(req, res) {
-    const { workerNameFilter, userID } = req.query;
+    const { workerNameFilter, userID, nameFilter } = req.query;
     const tasks = await Task.findAll({
       order: ['due_date'],
-      where: { user_id: userID, canceled_at: null, end_date: { [Op.ne]: null } },
+      where: {
+        user_id: userID,
+        canceled_at: null,
+        end_date: { [Op.ne]: null },
+        name: { [Op.iLike]: `%${nameFilter}%` },
+      },
       include: [
         {
           model: Worker,
           as: 'worker',
-          attributes: ['id', 'worker_name', 'phonenumber'],
+          attributes: ['id', 'worker_name', 'email'],
           where: {
             worker_name: {
               [Op.like]: `%${workerNameFilter}%`,
@@ -32,7 +37,7 @@ class TaskUserUnfinishedController {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'user_name'],
+          attributes: ['id', 'user_name', 'email'],
           include: [
             {
               model: File,
@@ -52,4 +57,4 @@ class TaskUserUnfinishedController {
   }
 }
 
-export default new TaskUserUnfinishedController();
+export default new TaskUserFinishedController();

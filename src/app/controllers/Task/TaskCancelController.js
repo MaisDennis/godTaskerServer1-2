@@ -1,12 +1,11 @@
 import 'firebase/firestore';
-// import firebaseAdmin from 'firebase-admin';
-// import firebase from '../../../config/firebase'
+import firebaseAdmin from 'firebase-admin';
 import Task from '../../models/Task';
-// import Worker from '../../models/Worker';
+import User from '../../models/User';
+import Worker from '../../models/Worker';
 
 class TaskCancelController {
   async update(req, res) {
-    console.log(req.body);
     const { id } = req.params;
     const { status } = req.body;
 
@@ -17,38 +16,45 @@ class TaskCancelController {
       status,
     });
     // Firebase Notification ***************************************************
-    // const worker = await Worker.findByPk(task.worker_id);
+    const user = await User.findByPk(task.user_id);
+    const worker = await Worker.findByPk(task.worker_id);
 
-    // const pushMessage = {
-    //   notification: {
-    //     title: `Task has been canceled`,
-    //     body: `${task.name}`,
-    //   },
-    //   data: {},
-    //   android: {
-    //     notification: {
-    //       sound: 'default',
-    //     },
-    //   },
-    //   apns: {
-    //     payload: {
-    //       aps: {
-    //         sound: 'default',
-    //       },
-    //     },
-    //   },
-    //   token: worker.notification_token,
-    // };
+    const pushMessage = {
+      notification: {
+        title: `${user.user_name}`,
+        body: `${task.status.comment}`,
+      },
+      data: {
+        channelId: 'godtaskerChannel01', // (required)
+        title: `${user.user_name}:`,
+        message: `${task.status.comment}`,
+      },
+      android: {
+        notification: {
+          sound: 'default',
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: 'default',
+          },
+        },
+      },
+      token: worker.notification_token,
+    };
 
-    // firebaseAdmin
-    //   .messaging()
-    //   .send(pushMessage)
-    //   .then(response => {
-    //     console.log('Successfully sent message: ', response);
-    //   })
-    //   .catch(error => {
-    //     console.log('Error sending message: ', error);
-    //   });
+    if (worker.notification_token) {
+      firebaseAdmin
+        .messaging()
+        .send(pushMessage)
+        .then(response => {
+          console.log('Successfully sent message: ', response);
+        })
+        .catch(error => {
+          console.log('Error sending message: ', error);
+        });
+    }
 
     return res.json(task);
   }

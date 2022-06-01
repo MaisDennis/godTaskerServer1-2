@@ -1,97 +1,76 @@
 import * as Yup from 'yup';
 import { Op } from 'sequelize';
 // -----------------------------------------------------------------------------
+import User from '../../models/User';
 import Worker from '../../models/Worker';
 import File from '../../models/File';
 // -----------------------------------------------------------------------------
 class WorkerController {
   async store(req, res) {
     const schema = Yup.object().shape({
-      first_name: Yup.string().required(),
-      last_name: Yup.string().required(),
       worker_name: Yup.string().required(),
-      worker_password: Yup.string()
-        .required()
-        .min(1),
-      phonenumber: Yup.string()
-        .required()
-        .min(11),
       email: Yup.string()
         .email()
         .required(),
-      birth_date: Yup.string(),
-      gender: Yup.string(),
-      bio: Yup.string(),
-      instagram: Yup.string(),
-      linkedin: Yup.string(),
     });
     if (!(await schema.isValid(req.body))) {
-      return (
-        res
-          .status(400)
-          // .json({ error: 'Worker Create fail: schema error' });
-          .json({ error: 'Erro nos dados.' })
-      );
+      return res
+        .status(400)
+        .json({ error: 'Create Worker fail: Schema error' });
     }
+
+    const { id, subscriber, worker_name, email, points, bio } = req.body;
 
     const workerExists = await Worker.findOne({
-      where: { phonenumber: req.body.phonenumber },
+      where: { email },
     });
     if (workerExists) {
-      return (
-        res
-          .status(400)
-          // .json({ error: 'Worker Create fail: Phonenumber already exists.' });
-          .json({ error: 'Erro: O número de celular já existe.' })
-      );
+      return res
+        .status(400)
+        .json({ error: 'Create Worker fail: Email already exists.' });
     }
-
-    const {
-      id,
-      subscriber,
-      first_name,
-      last_name,
-      worker_name,
-      worker_password,
-      phonenumber,
-      email,
-      birth_date,
-      gender,
-      bio,
-      instagram,
-      linkedin,
-    } = req.body;
 
     const worker = await Worker.create({
       id,
       subscriber,
-      first_name,
-      last_name,
       worker_name,
-      worker_password,
-      phonenumber,
       email,
-      birth_date,
-      gender,
+      points,
       bio,
-      instagram,
-      linkedin,
     });
+
     return res.json(worker);
   }
 
   // ---------------------------------------------------------------------------
   async update(req, res) {
-    const { phonenumber } = req.body;
+    const schema = Yup.object().shape({
+      email: Yup.string()
+        .email()
+        .required(),
+    });
+    if (!(await schema.isValid(req.body))) {
+      return res
+        .status(400)
+        .json({ error: 'Create Worker fail: Schema error' });
+    }
+
+    const { email } = req.body;
 
     const worker = await Worker.findOne({
-      where: { phonenumber },
+      where: { email },
     });
 
     await worker.update(req.body);
 
-    const { id, worker_name, avatar } = await Worker.findOne({
-      where: { phonenumber },
+    const {
+      id,
+      first_name,
+      last_name,
+      worker_name,
+      avatar,
+    } = await Worker.findOne({
+      where: { email },
       include: [
         {
           model: File,
@@ -100,31 +79,39 @@ class WorkerController {
         },
       ],
     });
-    return res.json({ id, worker_name, phonenumber, avatar });
+
+    return res.json({
+      id,
+      first_name,
+      last_name,
+      worker_name,
+      email,
+      avatar,
+    });
   }
 
   // ---------------------------------------------------------------------------
   async index(req, res) {
-    const { nameFilter } = req.query;
+    const { nameFilter, user_email } = req.query;
+
+    const user = await User.findOne({
+      where: { email: user_email },
+    });
+
+    const { blocked_list } = user;
+    let checked_blocked_list = [];
+
+    if (blocked_list !== null) {
+      checked_blocked_list = blocked_list;
+    }
+
     const workers = await Worker.findAll({
-      attributes: [
-        'id',
-        'subscriber',
-        'first_name',
-        'last_name',
-        'worker_name',
-        'worker_password',
-        'phonenumber',
-        'email',
-        'birth_date',
-        'gender',
-        'bio',
-        'instagram',
-        'linkedin',
-      ],
       where: {
         worker_name: {
-          [Op.like]: `%${nameFilter}%`,
+          [Op.iLike]: `%${nameFilter}%`,
+        },
+        email: {
+          [Op.notIn]: checked_blocked_list,
         },
         canceled_at: null,
       },
@@ -141,21 +128,10 @@ class WorkerController {
 
   //----------------------------------------------------------------------------
   async delete(req, res) {
-    let worker = await Worker.findOne({
-      where: {
-        phonenumber: req.body.phonenumber,
-      },
-    });
+    const { id } = req.params;
+    let worker = await Worker.findByPk(id);
 
-    const workerCanceledPhonenumber = worker.phonenumber;
-    const workerCanceledEmail = worker.email;
-
-    worker = await worker.update({
-      phonenumber: '',
-      deleted_phonenumber: workerCanceledPhonenumber,
-      deleted_email: workerCanceledEmail,
-      canceled_at: new Date(),
-    });
+    worker = await worker.destroy();
 
     return res.json(worker);
   }

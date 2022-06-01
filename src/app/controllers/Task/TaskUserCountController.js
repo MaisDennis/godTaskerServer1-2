@@ -1,12 +1,12 @@
 import { Op } from 'sequelize';
+import { addDays, endOfISOWeek } from 'date-fns';
 import Task from '../../models/Task';
-import { addDays, endOfISOWeek } from 'date-fns'
 // -----------------------------------------------------------------------------
 class TaskUserCountController {
   async index(req, res) {
     const { userID } = req.query;
     // console.log(req.query)
-    const parsedUserID = parseInt(userID)
+    const parsedUserID = parseInt(userID);
 
     const sent = await Task.findAll({
       order: ['due_date'],
@@ -30,7 +30,11 @@ class TaskUserCountController {
 
     const finished = await Task.findAll({
       order: ['due_date'],
-      where: { user_id: userID, canceled_at: null, end_date: { [Op.ne]: null } },
+      where: {
+        user_id: userID,
+        canceled_at: null,
+        end_date: { [Op.ne]: null },
+      },
     });
 
     const canceled = await Task.findAll({
@@ -39,64 +43,63 @@ class TaskUserCountController {
     });
 
     function overDue() {
-      let array = []
+      const array = [];
       initiated.map(i => {
-        if(i.due_date < new Date()) {
-          console.log('www')
-          array.push(i.due_date)
+        if (i.due_date < new Date()) {
+          array.push(i.due_date);
         }
-      })
-      return array
+      });
+      return array;
     }
 
     function todayDue() {
-      let array = []
+      const array = [];
       initiated.map(i => {
-        if(i.due_date === new Date()) {
-          console.log('www')
-          array.push(i.due_date)
+        if (i.due_date === new Date()) {
+          array.push(i.due_date);
         }
-      })
-      return array
+      });
+      return array;
     }
 
     function tomorrowDue() {
-      let array = []
+      const array = [];
       initiated.map(i => {
-        if(i.due_date === addDays(new Date(), 1)) {
-          console.log('www')
-          array.push(i.due_date)
+        if (i.due_date === addDays(new Date(), 1)) {
+          array.push(i.due_date);
         }
-      })
-      return array
+      });
+      return array;
     }
 
     function thisWeekDue() {
-      let array = []
+      const array = [];
       initiated.map(i => {
-        if(
-          (i.due_date < endOfISOWeek(new Date())) && (i.due_date > new Date())
-        ) {
-          console.log('www')
-          array.push(i.due_date)
+        if (i.due_date < endOfISOWeek(new Date()) && i.due_date > new Date()) {
+          array.push(i.due_date);
         }
-      })
-      return array
+      });
+      return array;
     }
 
-    const countSent = sent.length
-    const countInitiated = initiated.length
-    const countFinished = finished.length
-    const countCanceled = canceled.length
-    const countOverDue = overDue().length
-    const countTodayDue = todayDue().length
-    const countTomorrowDue = tomorrowDue().length
-    const countThisWeekDue = thisWeekDue().length
+    const countSent = sent.length;
+    const countInitiated = initiated.length;
+    const countFinished = finished.length;
+    const countCanceled = canceled.length;
+    const countOverDue = overDue().length;
+    const countTodayDue = todayDue().length;
+    const countTomorrowDue = tomorrowDue().length;
+    const countThisWeekDue = thisWeekDue().length;
 
     return res.json({
-      countSent, countInitiated, countFinished,
-      countCanceled, countOverDue, countTodayDue,
-      countTomorrowDue, countThisWeekDue
+      countSent,
+      countInitiated,
+      countFinished,
+      countCanceled,
+      countOverDue,
+      countTodayDue,
+      countTomorrowDue,
+      countThisWeekDue,
     });
   }
 }

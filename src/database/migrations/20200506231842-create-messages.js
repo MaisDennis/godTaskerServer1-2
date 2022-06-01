@@ -19,6 +19,10 @@ module.exports = {
         onDelete: 'SET NULL',
         allowNull: true,
       },
+      user_email: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
       worker_id: {
         type: Sequelize.INTEGER,
         references: { model: 'workers', key: 'id' },
@@ -26,8 +30,20 @@ module.exports = {
         onDelete: 'SET NULL',
         allowNull: true,
       },
+      worker_email: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
       messaged_at: {
         type: Sequelize.STRING,
+        allowNull: true,
+      },
+      last_message: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      last_id: {
+        type: Sequelize.INTEGER,
         allowNull: true,
       },
       created_at: {

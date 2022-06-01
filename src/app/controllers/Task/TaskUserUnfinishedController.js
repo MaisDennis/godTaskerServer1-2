@@ -6,19 +6,22 @@ import User from '../../models/User';
 // -----------------------------------------------------------------------------
 class TaskUserUnfinishedController {
   async index(req, res) {
-    const { workerNameFilter, userID } = req.query;
+    const { workerNameFilter, userID, nameFilter } = req.query;
     // console.log(req.query)
-    const parsedUserID = parseInt(userID)
+    const parsedUserID = parseInt(userID);
     const tasks = await Task.findAll({
       order: ['due_date'],
       where: {
-        user_id: parsedUserID, canceled_at: null, end_date: null
+        user_id: parsedUserID,
+        canceled_at: null,
+        end_date: null,
+        name: { [Op.iLike]: `%${nameFilter}%` },
       },
       include: [
         {
           model: Worker,
           as: 'worker',
-          attributes: ['id', 'worker_name', 'phonenumber'],
+          attributes: ['id', 'worker_name', 'email'],
           where: {
             worker_name: {
               [Op.like]: `%${workerNameFilter}%`,
@@ -35,7 +38,7 @@ class TaskUserUnfinishedController {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'user_name'],
+          attributes: ['id', 'user_name', 'email'],
           include: [
             {
               model: File,
@@ -46,8 +49,8 @@ class TaskUserUnfinishedController {
         },
       ],
     });
-    const countTasks = tasks.length
-    console.log(countTasks)
+    const countTasks = tasks.length;
+    console.log(countTasks);
     return res.json(tasks);
   }
 }

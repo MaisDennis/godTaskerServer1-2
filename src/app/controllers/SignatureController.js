@@ -5,20 +5,18 @@ class SignatureController {
   async store(req, res) {
     // Upload to AWS bucket
     signatureImgUpload(req, res, async error => {
-      // console.log('requestOkokok', req.file);
       if (error) {
         res.json({ error });
       } else {
         // If File not found
         if (req.file === undefined) {
-          // console.log('Error: No File Selected!');
           res.json('Error: No File Selected');
         }
         // If Success
         const name = req.file.key;
         const path = req.file.location;
-        await Signature.create({ name, path, });
-        const signature = await Signature.findOne({ where: { name, }, });
+        await Signature.create({ name, path });
+        const signature = await Signature.findOne({ where: { name } });
         // Save the file name into database into profile model
         res.json({
           image: name,
@@ -28,6 +26,7 @@ class SignatureController {
       }
     });
   }
+
   // ---------------------------------------------------------------------------
   async index(req, res) {
     const { image } = req.query;
